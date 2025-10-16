@@ -1,0 +1,7 @@
+{
+  "name": "Infographic Voice Analyzer",
+  "description": "A modern web application that converts speech to text, analyzes the content using AI to generate clean data and summaries, and visualizes it as an infographic. Users can select the output language and download the results.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
