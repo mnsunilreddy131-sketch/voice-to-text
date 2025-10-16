@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Icon } from './Icon';
 import { LANGUAGES } from '../constants';
 
@@ -7,13 +7,15 @@ interface ControlsProps {
     isLoading: boolean;
     onRecord: () => void;
     onStop: () => void;
-    onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onTriggerUpload: () => void;
     selectedLanguage: string;
     onLanguageChange: (lang: string) => void;
     onDownload: () => void;
     onSaveText: () => void;
     disableActions: boolean;
     showCopied: boolean;
+    isListeningForCommands: boolean;
+    onToggleListening: () => void;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -21,16 +23,16 @@ export const Controls: React.FC<ControlsProps> = ({
     isLoading,
     onRecord,
     onStop,
-    onFileUpload,
+    onTriggerUpload,
     selectedLanguage,
     onLanguageChange,
     onDownload,
     onSaveText,
     disableActions,
-    showCopied
+    showCopied,
+    isListeningForCommands,
+    onToggleListening,
 }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
     return (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -46,9 +48,9 @@ export const Controls: React.FC<ControlsProps> = ({
                     {isRecording && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>}
                     <Icon name={isRecording ? 'stop' : 'mic'} className="w-8 h-8 text-white" />
                 </button>
-                 <div className="border-l border-slate-700 pl-4">
+                 <div className="border-l border-slate-700 pl-4 flex items-center gap-4">
                     <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={onTriggerUpload}
                         disabled={isRecording || isLoading}
                         className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed`}
                         aria-label="Upload audio file"
@@ -56,15 +58,19 @@ export const Controls: React.FC<ControlsProps> = ({
                     >
                         <Icon name="upload" className="w-8 h-8 text-white" />
                     </button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={onFileUpload}
-                        accept="audio/*"
-                        className="hidden"
-                    />
+                    <button
+                        onClick={onToggleListening}
+                        disabled={isRecording || isLoading}
+                        className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed ${isListeningForCommands ? 'ring-4 ring-cyan-400 ring-offset-2' : ''}`}
+                        aria-label={isListeningForCommands ? 'Deactivate Voice Commands' : 'Activate Voice Commands'}
+                        title={isListeningForCommands ? 'Deactivate Voice Commands' : 'Activate Voice Commands'}
+                    >
+                        <Icon name="robot" className={`w-8 h-8 text-white transition-colors ${isListeningForCommands ? 'text-cyan-300' : ''}`} />
+                    </button>
                 </div>
-                <div>
+            </div>
+            <div className="flex items-center gap-3">
+                 <div className="flex-grow md:flex-grow-0">
                      <label htmlFor="language-select" className="block text-sm font-medium text-slate-400 mb-1">
                         Analysis Language
                     </label>
@@ -73,15 +79,13 @@ export const Controls: React.FC<ControlsProps> = ({
                         value={selectedLanguage}
                         onChange={(e) => onLanguageChange(e.target.value)}
                         disabled={isRecording || isLoading}
-                        className="bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition disabled:opacity-50"
+                        className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition disabled:opacity-50"
                     >
                         {LANGUAGES.map((lang) => (
                             <option key={lang.value} value={lang.value}>{lang.label}</option>
                         ))}
                     </select>
                 </div>
-            </div>
-            <div className="flex items-center gap-3">
                  <button
                     onClick={onSaveText}
                     disabled={disableActions || isLoading}

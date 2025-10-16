@@ -10,3 +10,8 @@ export interface AnalyzedData {
     cleanedText: string;
     chartData: ChartDataPoint[];
 }
+
+export interface HistoryItem extends AnalyzedData {
+    id: string;
+    timestamp: number;
+}

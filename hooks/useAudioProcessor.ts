@@ -38,10 +38,7 @@ export const useAudioProcessor = (onTranscriptionComplete: (text: string) => voi
 
     const aiRef = useRef(new GoogleGenAI({ apiKey: process.env.API_KEY }));
 
-    const stopRecording = useCallback(() => {
-        if (!isRecording) return;
-        setIsRecording(false);
-
+    const cleanupRecording = useCallback(() => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
@@ -55,17 +52,30 @@ export const useAudioProcessor = (onTranscriptionComplete: (text: string) => voi
             mediaStreamSourceRef.current = null;
         }
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close();
+            audioContextRef.current.close().catch(console.error);
             audioContextRef.current = null;
         }
-        
         sessionPromiseRef.current?.then(session => session.close());
         sessionPromiseRef.current = null;
+    }, []);
 
+    const cancelRecording = useCallback(() => {
+        if (!isRecording) return;
+        setIsRecording(false);
+        setTranscription('');
+        fullTranscriptionRef.current = '';
+        cleanupRecording();
+    }, [isRecording, cleanupRecording]);
+
+    const stopRecording = useCallback(() => {
+        if (!isRecording) return;
+        setIsRecording(false);
+        cleanupRecording();
         if (fullTranscriptionRef.current.trim()) {
             onTranscriptionComplete(fullTranscriptionRef.current);
         }
-    }, [isRecording, onTranscriptionComplete]);
+    }, [isRecording, onTranscriptionComplete, cleanupRecording]);
+
 
     const startRecording = useCallback(async () => {
         if (isRecording) return;
@@ -100,7 +110,7 @@ export const useAudioProcessor = (onTranscriptionComplete: (text: string) => voi
                     },
                     onerror: (e: ErrorEvent) => {
                         console.error('Gemini Live error:', e);
-                        stopRecording();
+                        cancelRecording();
                     },
                     onclose: (e: CloseEvent) => {
                         console.log('Gemini Live session closed.');
@@ -127,8 +137,8 @@ export const useAudioProcessor = (onTranscriptionComplete: (text: string) => voi
             console.error('Failed to start recording:', error);
             setIsRecording(false);
         }
-    }, [isRecording, stopRecording]);
+    }, [isRecording, cancelRecording]);
 
 
-    return { isRecording, transcription, startRecording, stopRecording };
+    return { isRecording, transcription, startRecording, stopRecording, cancelRecording };
 };
